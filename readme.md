@@ -4,9 +4,9 @@ Sistema de catálogo de filmes com avaliações de usuários, listas de favorito
 
 ## 👥 Integrantes do Grupo
 
-- **[Seu Nome]** - [Seu RA]
-- **[Nome do Colega 2]** - [RA do Colega 2]
-- **[Nome do Colega 3]** - [RA do Colega 3]
+- **Pedro Ernesto** 
+- **Matheus Henrique**
+- **Bianca Alves**
 
 ## 📝 Descrição do Problema
 
