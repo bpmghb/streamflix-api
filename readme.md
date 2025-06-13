@@ -368,7 +368,7 @@ Adiciona um filme à lista.
 
 1. **Clone o repositório:**
 ```bash
-git clone https://github.com/seu-usuario/streamflix-api.git
+git clone https://github.com/bpmghb/streamflix-api.git
 cd streamflix-api
 ```
 
