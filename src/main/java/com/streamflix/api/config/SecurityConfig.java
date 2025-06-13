@@ -1,0 +1,94 @@
+package com.streamflix.api.config;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
+
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthFilter;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                // Desabilitar CSRF (não necessário para APIs stateless)
+                .csrf(AbstractHttpConfigurer::disable)
+
+                // Configurar autorização de requisições
+                .authorizeHttpRequests(authz -> authz
+                        // Rotas públicas (sem autenticação)
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/").permitAll()
+
+                        // Rotas que usuários comuns podem acessar
+                        .requestMatchers("/api/filmes/ativos/**").hasAnyRole("USUARIO", "ADMINISTRADOR")
+                        .requestMatchers("/api/filmes/{id}/detalhes").hasAnyRole("USUARIO", "ADMINISTRADOR")
+                        .requestMatchers("/api/avaliacoes/**").hasAnyRole("USUARIO", "ADMINISTRADOR")
+                        .requestMatchers("/api/listas-favoritos/**").hasAnyRole("USUARIO", "ADMINISTRADOR")
+
+                        // Rotas exclusivas para administradores
+                        .requestMatchers("/api/filmes/admin/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers("/api/usuarios/admin/**").hasRole("ADMINISTRADOR")
+
+                        // Endpoints de gerenciamento de filmes (CRUD completo)
+                        .requestMatchers("POST", "/api/filmes").hasRole("ADMINISTRADOR")
+                        .requestMatchers("PUT", "/api/filmes/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers("DELETE", "/api/filmes/**").hasRole("ADMINISTRADOR")
+
+                        // Todas as outras rotas requerem autenticação
+                        .anyRequest().authenticated()
+                )
+
+                // Configurar sessão como stateless
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // Adicionar filtro JWT antes do filtro de autenticação padrão
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // Configurar headers para H2 Console
+                .headers(headers -> headers.frameOptions().disable());
+
+        return http.build();
+    }
+
+    /**
+     * Configuração alternativa mais restritiva (comentada)
+     */
+    /*
+    @Bean
+    public SecurityFilterChain strictSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(authz -> authz
+                // Apenas rotas de autenticação são públicas
+                .requestMatchers("/auth/login", "/auth/register").permitAll()
+                .requestMatchers("/h2-console/**").permitAll()
+
+                // Tudo mais requer autenticação
+                .anyRequest().authenticated()
+            )
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .headers(headers -> headers.frameOptions().disable());
+
+        return http.build();
+    }
+    */
+}
