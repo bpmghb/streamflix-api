@@ -30,18 +30,33 @@ public class SecurityConfig {
                         // Rotas públicas (sem autenticação)
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
+                        // SWAGGER - LIBERAR TODAS AS ROTAS
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/swagger-ui.html").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .requestMatchers("/v3/api-docs.yaml").permitAll()
+                        .requestMatchers("/swagger-resources/**").permitAll()
+                        .requestMatchers("/webjars/**").permitAll()
+
                         .requestMatchers("/").permitAll()
+                        .requestMatchers("/error").permitAll()
 
                         // Rotas que usuários comuns podem acessar
                         .requestMatchers("/api/filmes/ativos/**").hasAnyRole("USUARIO", "ADMINISTRADOR")
                         .requestMatchers("/api/filmes/{id}/detalhes").hasAnyRole("USUARIO", "ADMINISTRADOR")
+                        .requestMatchers("/api/filmes/ranking/**").hasAnyRole("USUARIO", "ADMINISTRADOR")
+                        .requestMatchers("/api/filmes/buscar").hasAnyRole("USUARIO", "ADMINISTRADOR")
                         .requestMatchers("/api/avaliacoes/**").hasAnyRole("USUARIO", "ADMINISTRADOR")
                         .requestMatchers("/api/listas-favoritos/**").hasAnyRole("USUARIO", "ADMINISTRADOR")
+                        .requestMatchers("/api/dashboard/publico").permitAll()
+                        .requestMatchers("/api/dashboard/filmes/populares").permitAll()
+                        .requestMatchers("/api/dashboard/estatisticas").permitAll()
 
                         // Rotas exclusivas para administradores
                         .requestMatchers("/api/filmes/admin/**").hasRole("ADMINISTRADOR")
                         .requestMatchers("/api/usuarios/admin/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers("/api/dashboard/admin").hasRole("ADMINISTRADOR")
 
                         // Endpoints de gerenciamento de filmes (CRUD completo)
                         .requestMatchers("POST", "/api/filmes").hasRole("ADMINISTRADOR")
@@ -60,35 +75,11 @@ public class SecurityConfig {
                 // Adicionar filtro JWT antes do filtro de autenticação padrão
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
-                // Configurar headers para H2 Console
-                .headers(headers -> headers.frameOptions().disable());
+                // Configurar headers para H2 Console e Swagger
+                .headers(headers -> headers
+                        .frameOptions().sameOrigin() // Corrigido o deprecated
+                );
 
         return http.build();
     }
-
-    /**
-     * Configuração alternativa mais restritiva (comentada)
-     */
-    /*
-    @Bean
-    public SecurityFilterChain strictSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(authz -> authz
-                // Apenas rotas de autenticação são públicas
-                .requestMatchers("/auth/login", "/auth/register").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-
-                // Tudo mais requer autenticação
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-            .headers(headers -> headers.frameOptions().disable());
-
-        return http.build();
-    }
-    */
 }
